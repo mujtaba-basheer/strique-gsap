@@ -1,0 +1,22 @@
+{
+    "compilerOptions": {
+        "outDir": "dist",
+        "target": "ES2017",
+        "module": "ES6",
+        "skipLibCheck": true,
+        "moduleResolution": "Bundler",
+        "newLine": "lf",
+        "lib": [
+            "DOM",
+            "ES2015",
+            "DOM.Iterable"
+        ],
+        "noEmitHelpers": true
+    },
+    "include": [
+        "src/*"
+    ],
+    "exclude": [
+        "node_modules"
+    ]
+}
