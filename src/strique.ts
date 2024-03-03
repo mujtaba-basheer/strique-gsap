@@ -251,9 +251,15 @@ const popNotificationsAnim = gsap
   .to(".date-and-time-wrapper", { opacity: 0 }, "<")
   .to(".comment-wrapper", { scale: 1.4, transformOrigin: "top" })
   .to(".comment-wrapper .comment-item", {
-    y: -200,
+    y: -230,
     stagger: 0.1,
-  });
+  })
+  .fromTo(
+    [".comment-item-overlay-1", ".comment-item-overlay-1.rev-linear"],
+    { opacity: 0 },
+    { opacity: 1 },
+    "<"
+  );
 
 const highlightNotificationAnim = gsap.to(
   ".comment-wrapper .comment-item.active",
