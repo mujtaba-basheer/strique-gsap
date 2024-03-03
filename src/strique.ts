@@ -486,9 +486,9 @@ const moveUpTaglineAnim = gsap
   )
   .fromTo(
     ".processing-data",
-    { backgroundImage: "transparent" },
+    { background: "transparent" },
     {
-      backgroundImage: "linear-gradient(#542cc2, #b57bee)",
+      background: "linear-gradient(#542cc2, #b57bee)",
       onReverseComplete: () => {
         gsap.set(".processing-data-bg-grid", { display: "block" });
         gsap.set(".processing-data .div-block-1038", { display: "flex" });
@@ -538,11 +538,41 @@ const moveUpTestimonialAnim2 = gsap.fromTo(
     },
     onComplete: () => {
       state.playedAnimation = moveUpTestimonialAnim2;
-      state.nextAnimation = null;
+      state.nextAnimation = showStriqueLoaderAnim;
       state.isActive = false;
     },
   }
 );
+
+const showStriqueLoaderAnim = gsap
+  .timeline({
+    paused: true,
+    onReverseComplete: () => {
+      state.playedAnimation = moveUpTestimonialAnim2;
+      state.nextAnimation = showStriqueLoaderAnim;
+      state.isActive = false;
+    },
+    onComplete: () => {
+      state.playedAnimation = showStriqueLoaderAnim;
+      state.nextAnimation = null;
+      state.isActive = false;
+    },
+  })
+  .fromTo("#insights-wrapper", { opacity: 1 }, { opacity: 0 })
+  .to(
+    ".processing-data",
+    // { background: "linear-gradient(#542cc2, #b57bee)" },
+    {
+      background: "#0b0219",
+      onReverseComplete: () => {
+        gsap.set("#insights-wrapper", { display: "block" });
+      },
+      onComplete: () => {
+        gsap.set("#insights-wrapper", { display: "none" });
+      },
+    }
+  )
+  .fromTo(".final-logo-screen", { opacity: 0 }, { opacity: 1 });
 
 const moveToFifthScreenAnim = gsap.to(window, {
   duration: 1.5,
