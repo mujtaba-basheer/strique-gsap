@@ -251,7 +251,7 @@ const popNotificationsAnim = gsap
   .to(".date-and-time-wrapper", { opacity: 0 }, "<")
   .to(".comment-wrapper", { scale: 1.4, transformOrigin: "top" })
   .to(".comment-wrapper .comment-item", {
-    y: -230,
+    y: -250,
     stagger: 0.1,
   })
   .fromTo(
