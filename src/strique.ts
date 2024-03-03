@@ -249,7 +249,11 @@ const popNotificationsAnim = gsap
   })
   .to(".iphone-image-wrap", { opacity: 0 })
   .to(".date-and-time-wrapper", { opacity: 0 }, "<")
-  .to(".comment-wrapper", { scale: 1.4, bottom: 0 });
+  .to(".comment-wrapper", { scale: 1.4, transformOrigin: "top" })
+  .to(".comment-wrapper .comment-item", {
+    y: -200,
+    stagger: 0.1,
+  });
 
 const highlightNotificationAnim = gsap.to(
   ".comment-wrapper .comment-item.active",
