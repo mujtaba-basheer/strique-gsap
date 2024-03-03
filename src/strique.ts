@@ -5,6 +5,9 @@ interface GlobalState {
   playedAnimation: StateItemT;
   nextAnimation: StateItemT;
   isActive: boolean;
+  repeatCount: {
+    rotateAnim: number;
+  };
 }
 
 window.scrollTo({ top: 0 });
@@ -16,6 +19,9 @@ const state: GlobalState = {
   playedAnimation: null,
   nextAnimation: null,
   isActive: false,
+  repeatCount: {
+    rotateAnim: 0,
+  },
 };
 
 window.addEventListener("wheel", (ev) => {
@@ -63,20 +69,23 @@ const enableScroll = () => {
 // disable scroll
 disableScroll();
 
-const rotateAnim = gsap.fromTo(
+gsap.fromTo(
   ".strique-rotate-animation",
   { rotate: 0 },
   {
+    id: "rotateAnim",
     rotate: "360deg",
     delay: 1,
     duration: 2,
-    onReverseComplete: () => {
-      state.nextAnimation = moveToSecondScreenAnim;
-      state.isActive = false;
-    },
-    onComplete: () => {
-      state.nextAnimation = moveToSecondScreenAnim;
-      state.isActive = false;
+    ease: "none",
+    repeat: -1,
+    onRepeat: () => {
+      const { rotateAnim: repeatCount } = state.repeatCount;
+      if (repeatCount === 0) {
+        state.nextAnimation = moveToSecondScreenAnim;
+        state.isActive = false;
+      }
+      state.repeatCount.rotateAnim++;
     },
   }
 );
@@ -86,9 +95,8 @@ const moveToSecondScreenAnim = gsap.to(window, {
   scrollTo: "#list-2",
   paused: true,
   onComplete: () => {
-    // moveToSecondScreenAnim.pause().seek(0);
     state.playedAnimation = null;
-    phoneEnterAnim.play();
+    phoneEnterAnim.play(0);
   },
 });
 
@@ -109,7 +117,8 @@ const moveToFirstScreenAnim = gsap.to(window, {
   paused: true,
   onComplete: () => {
     state.playedAnimation = null;
-    rotateAnim.play(0);
+    state.nextAnimation = moveToSecondScreenAnim;
+    state.isActive = false;
   },
 });
 
@@ -266,11 +275,7 @@ const moveToThirdScreenAnim = gsap.to(window, {
   duration: 1.5,
   scrollTo: "#list-3",
   paused: true,
-  onComplete: () => {
-    state.playedAnimation = moveToThirdScreenAnim;
-    state.nextAnimation = moveChatUpAnim;
-    state.isActive = false;
-  },
+  onComplete: () => moveChatUpAnim.play(0),
 });
 
 /*
@@ -283,6 +288,7 @@ const moveChatUpAnim = gsap.fromTo(
   {
     y: -500,
     paused: true,
+    delay: 1,
     duration: 1,
     onReverseComplete: () => {
       moveBackToSecondScreenAnim.play(0);
@@ -305,9 +311,16 @@ const highlightChatAnim = gsap
       state.isActive = false;
     },
     onComplete: () => {
-      state.nextAnimation = null;
+      state.nextAnimation = moveToFourthScreenAnim;
       state.playedAnimation = highlightChatAnim;
       state.isActive = false;
+
+      gsap.set(
+        [".fatching-loader._1", ".fatching-loader._2", ".fatching-complete"],
+        {
+          opacity: 0,
+        }
+      );
     },
   })
   .fromTo(
@@ -325,7 +338,219 @@ const moveBackToSecondScreenAnim = gsap.to(window, {
   paused: true,
   onComplete: () => {
     state.playedAnimation = highlightNotificationAnim;
-    state.nextAnimation = moveChatUpAnim;
+    state.nextAnimation = moveToThirdScreenAnim;
+    state.isActive = false;
+  },
+});
+
+const moveToFourthScreenAnim = gsap.to(window, {
+  duration: 1.5,
+  scrollTo: "#list-4",
+  paused: true,
+  onComplete: () => {
+    moveUpImagesAnim.play(0);
+  },
+});
+
+/*
+ Fourth page animation
+*/
+
+const moveBackToThirdScreenAnim = gsap.to(window, {
+  duration: 1.5,
+  scrollTo: "#list-3",
+  paused: true,
+  onComplete: () => {
+    state.playedAnimation = highlightChatAnim;
+    state.nextAnimation = moveToFourthScreenAnim;
+    state.isActive = false;
+  },
+});
+
+const moveUpImagesAnim = gsap.fromTo(
+  ".processing-data-bg-grid img",
+  { y: 100 },
+  {
+    y: 0,
+    paused: true,
+    onReverseComplete: () => {
+      moveBackToThirdScreenAnim.play(0);
+    },
+    onComplete: () => {
+      state.playedAnimation = moveUpImagesAnim;
+      state.nextAnimation = showProcessingTextAnim1;
+      state.isActive = false;
+    },
+  }
+);
+
+const showProcessingTextAnim1 = gsap.fromTo(
+  ".fatching-loader._1",
+  { opacity: 0 },
+  {
+    opacity: 1,
+    paused: true,
+    onReverseComplete: () => {
+      state.playedAnimation = moveUpImagesAnim;
+      state.nextAnimation = showProcessingTextAnim1;
+      state.isActive = false;
+    },
+    onComplete: () => {
+      state.playedAnimation = showProcessingTextAnim1;
+      state.nextAnimation = showProcessingTextAnim2;
+      state.isActive = false;
+    },
+  }
+);
+
+const showProcessingTextAnim2 = gsap
+  .timeline({
+    paused: true,
+    onReverseComplete: () => {
+      state.playedAnimation = showProcessingTextAnim1;
+      state.nextAnimation = showProcessingTextAnim2;
+      state.isActive = false;
+    },
+    onComplete: () => {
+      state.playedAnimation = showProcessingTextAnim2;
+      state.nextAnimation = showProcessingTextAnim3;
+      state.isActive = false;
+    },
+  })
+  .fromTo(".fatching-loader._1", { opacity: 1 }, { opacity: 0 })
+  .fromTo(
+    ".fatching-loader._2",
+    { opacity: 0 },
+    {
+      opacity: 1,
+    },
+    "<"
+  );
+
+const showProcessingTextAnim3 = gsap
+  .timeline({
+    paused: true,
+    onReverseComplete: () => {
+      state.playedAnimation = showProcessingTextAnim2;
+      state.nextAnimation = showProcessingTextAnim3;
+      state.isActive = false;
+    },
+    onComplete: () => {
+      state.playedAnimation = showProcessingTextAnim3;
+      state.nextAnimation = moveUpTaglineAnim;
+      state.isActive = false;
+    },
+  })
+  .fromTo(
+    ".fatching-loader._2",
+    { opacity: 1 },
+    {
+      opacity: 0,
+    }
+  )
+  .fromTo(
+    ".fatching-complete",
+    { opacity: 0 },
+    {
+      opacity: 1,
+    },
+    "<"
+  );
+
+const moveUpTaglineAnim = gsap
+  .timeline({
+    paused: true,
+    onReverseComplete: () => {
+      state.playedAnimation = showProcessingTextAnim3;
+      state.nextAnimation = moveUpTaglineAnim;
+      state.isActive = false;
+    },
+    onComplete: () => {
+      state.playedAnimation = moveUpTaglineAnim;
+      state.nextAnimation = moveUpTestimonialAnim1;
+      state.isActive = false;
+    },
+  })
+  .fromTo(
+    [".processing-data-bg-grid", ".processing-data .div-block-1038"],
+    { opacity: 1 },
+    {
+      opacity: 0,
+      onComplete: () => {
+        gsap.set(
+          [".processing-data-bg-grid", ".processing-data .div-block-1038"],
+          { display: "none" }
+        );
+      },
+    }
+  )
+  .fromTo(
+    ".processing-data",
+    { backgroundImage: "transparent" },
+    {
+      backgroundImage: "linear-gradient(#542cc2, #b57bee)",
+      onReverseComplete: () => {
+        gsap.set(".processing-data-bg-grid", { display: "block" });
+        gsap.set(".processing-data .div-block-1038", { display: "flex" });
+      },
+    },
+    "<"
+  )
+  .fromTo(".testimonial-tagline", { opacity: 0, y: 300 }, { opacity: 1, y: 0 });
+
+const moveUpTestimonialAnim1 = gsap.fromTo(
+  ".testimonial-wrap:not(.bottom) .insights-metric-testimonial",
+  { opacity: 0, y: 100, scale: 0.8 },
+  {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    paused: true,
+    stagger: 0.4,
+    ease: "elastic.out",
+    onReverseComplete: () => {
+      state.playedAnimation = moveUpTaglineAnim;
+      state.nextAnimation = moveUpTestimonialAnim1;
+      state.isActive = false;
+    },
+    onComplete: () => {
+      state.playedAnimation = moveUpTestimonialAnim1;
+      state.nextAnimation = moveUpTestimonialAnim2;
+      state.isActive = false;
+    },
+  }
+);
+
+const moveUpTestimonialAnim2 = gsap.fromTo(
+  ".testimonial-wrap.bottom .insights-metric-testimonial",
+  { opacity: 0, y: 100, scale: 0.8 },
+  {
+    opacity: 1,
+    y: -60,
+    scale: 1,
+    paused: true,
+    stagger: 0.4,
+    ease: "elastic.out",
+    onReverseComplete: () => {
+      state.playedAnimation = moveUpTestimonialAnim1;
+      state.nextAnimation = moveUpTestimonialAnim2;
+      state.isActive = false;
+    },
+    onComplete: () => {
+      state.playedAnimation = moveUpTestimonialAnim2;
+      state.nextAnimation = null;
+      state.isActive = false;
+    },
+  }
+);
+
+const moveToFifthScreenAnim = gsap.to(window, {
+  duration: 1.5,
+  scrollTo: "#list-5",
+  paused: true,
+  onComplete: () => {
+    state.playedAnimation = highlightChatAnim;
+    state.nextAnimation = null;
     state.isActive = false;
   },
 });
