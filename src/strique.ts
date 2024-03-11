@@ -10,6 +10,7 @@ interface GlobalState {
     rotateAnim: number;
   };
   typed: Typed | null;
+  isAnimSkipped: boolean;
 }
 
 window.scrollTo({ top: 0 });
@@ -26,6 +27,7 @@ const state: GlobalState = {
     rotateAnim: 0,
   },
   typed: null,
+  isAnimSkipped: false,
 };
 
 window.addEventListener("wheel", (ev) => {
@@ -118,7 +120,10 @@ const setupTypewriterEffect = () => {
     typeSpeed: 50,
   });
 };
-const skipAnimation = () => {
+const skipAnimation = (ev: MouseEvent) => {
+  ev.preventDefault();
+  state.isAnimSkipped = true;
+
   gsap.to(".page-loader", {
     opacity: 0,
     pointerEvents: "none",
@@ -221,7 +226,7 @@ const notificationsAnim = gsap
     { yPercent: 100 },
     {
       yPercent: 0,
-      duration: 2,
+      duration: 0.5,
       onReverseComplete: () => {
         // moveToFirstScreenAnim.play(0);
       },
@@ -277,7 +282,7 @@ const notificationsAnim = gsap
     scale: 1,
     stagger: 0.4,
     onStart: () => {
-      iPhoneAudioEl.play();
+      if (!state.isAnimSkipped) iPhoneAudioEl.play();
       shakePhone();
     },
   });
@@ -568,4 +573,4 @@ const showStriqueLoaderAnim = gsap
     { scale: 20, rotate: 360, duration: 1.5 },
     ">+=2"
   )
-  .fromTo(".page-loader", { opacity: 1 }, { opacity: 0, duration: 1 });
+  .fromTo(".page-loader", { opacity: 1 }, { opacity: 0, duration: 1 }, "<");
