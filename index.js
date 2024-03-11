@@ -25,13 +25,23 @@ const init = async () => {
     // ""
   ];
 
+  const sanitizeCode = (code = "") => {
+    const lines = code.split("\n");
+    const newLines = [];
+    for (const line of lines) {
+      if (!line.startsWith("import")) newLines.push(line);
+    }
+
+    return newLines.join("\n");
+  };
+
   for (const file of filesToUpload) {
     try {
       const inputCode = fs.readFileSync(`dist/${file}.js`, {
         encoding: "utf8",
       });
-      const lb = inputCode.indexOf("\n");
-      const outputCode = minify(inputCode.substring(lb + 1), {}).code;
+      const sanitizedCode = sanitizeCode(inputCode);
+      const outputCode = minify(sanitizedCode, {}).code;
       fs.writeFileSync(`dist/min/${file}.min.js`, outputCode, {
         encoding: "utf8",
       });

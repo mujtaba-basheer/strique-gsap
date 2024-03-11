@@ -1,4 +1,5 @@
 import "gsap/types";
+import Typed from "typed.js";
 
 type StateItemT = gsap.core.Tween | gsap.core.Timeline | null;
 interface GlobalState {
@@ -8,9 +9,11 @@ interface GlobalState {
   repeatCount: {
     rotateAnim: number;
   };
+  typed: Typed | null;
 }
 
 window.scrollTo({ top: 0 });
+document.querySelector(".page-loader").scrollTop = 0;
 
 gsap.registerEffect(ScrollToPlugin);
 gsap.registerPlugin(ScrollTrigger);
@@ -22,19 +25,20 @@ const state: GlobalState = {
   repeatCount: {
     rotateAnim: 0,
   },
+  typed: null,
 };
 
 window.addEventListener("wheel", (ev) => {
   if (state.isActive) return;
 
-  if (ev.deltaY > 100) {
+  if (ev.deltaY > 10) {
     const animation = state.nextAnimation;
     if (animation) {
       animation.play(0);
       state.isActive = true;
       state.nextAnimation = null;
     }
-  } else if (ev.deltaY < -100) {
+  } else if (ev.deltaY < -10) {
     const animation = state.playedAnimation;
     if (animation) {
       animation.reverse();
@@ -68,10 +72,7 @@ const slackAudioEl = document.createElement("audio");
 }
 
 const disableScroll = () => gsap.set(document.body, { overflow: "hidden" });
-const enableScroll = () => {
-  // while (animations.length) animations.pop();
-  gsap.set(document.body, { overflow: "auto" });
-};
+const enableScroll = () => gsap.set(document.body, { overflow: "auto" });
 
 /*
  First page animation
@@ -91,17 +92,55 @@ const runCounter = () => {
     const increment = target / 1000;
     if (count < target) {
       counter.innerText = `${Math.ceil(count + increment)}`;
-      setTimeout(updateCounter, 3);
+      setTimeout(updateCounter, 30);
     } else {
       counter.innerText = target + "";
       setTimeout(() => {
         moveToSecondScreenAnim.play(0);
+        state.isActive = true;
       }, 1.5 * 1000);
     }
   };
   updateCounter();
 };
-window.addEventListener("load", runCounter);
+const counterEl = document.getElementById("counters");
+if (counterEl) runCounter();
+
+const setupTypewriterEffect = () => {
+  const textEl = document.querySelector("#typewriter-div .processing-text");
+  state.typed = new Typed(textEl, {
+    loop: false,
+    strings: [
+      "Fetching Data through multiple platforms",
+      "Analysing multiple data",
+      "It takes X hours to compile and generate a report<br />which could lead to human error",
+    ],
+    typeSpeed: 50,
+  });
+};
+const skipAnimation = () => {
+  gsap.to(".page-loader", {
+    opacity: 0,
+    pointerEvents: "none",
+    onComplete: () => {
+      document.querySelector(".page-loader").remove();
+
+      state.nextAnimation = null;
+      state.playedAnimation = null;
+      state.isActive = false;
+
+      enableScroll();
+    },
+  });
+};
+window.addEventListener("load", () => {
+  setupTypewriterEffect();
+
+  const tabEls = document.querySelectorAll<HTMLAnchorElement>(
+    ".tab-wrap a:last-child"
+  );
+  tabEls.forEach((tabEl) => tabEl.addEventListener("click", skipAnimation));
+});
 
 gsap.fromTo(
   ".strique-rotate-animation",
@@ -115,24 +154,31 @@ gsap.fromTo(
     repeat: -1,
     onRepeat: () => {
       const { rotateAnim: repeatCount } = state.repeatCount;
+      /*
       if (repeatCount === 0) {
         state.nextAnimation = moveToSecondScreenAnim;
         state.isActive = false;
       }
+      */
       state.repeatCount.rotateAnim++;
     },
   }
 );
 
-const moveToSecondScreenAnim = gsap.to(window, {
-  duration: 1.5,
-  scrollTo: "#list-2",
-  paused: true,
-  onComplete: () => {
-    state.playedAnimation = null;
-    notificationsAnim.play(0);
-  },
-});
+const moveToSecondScreenAnim = gsap.fromTo(
+  "#list-1",
+  { opacity: 1 },
+  {
+    opacity: 0,
+    pointerEvents: "none",
+    duration: 1.5,
+    paused: true,
+    onComplete: () => {
+      state.playedAnimation = null;
+      notificationsAnim.play(0);
+    },
+  }
+);
 
 /*
  Second page animation
@@ -145,8 +191,9 @@ gsap.set(".comment-wrapper .comment-item", {
   scale: 0,
 });
 
-const moveToFirstScreenAnim = gsap.to(window, {
-  scrollTo: "#list-1",
+const moveToFirstScreenAnim = gsap.to("#list-1", {
+  opacity: 1,
+  pointerEvents: "auto",
   duration: 1.5,
   paused: true,
   onComplete: () => {
@@ -260,7 +307,7 @@ const popNotificationsAnim = gsap
     },
     onComplete: () => {
       state.playedAnimation = popNotificationsAnim;
-      state.nextAnimation = moveToThirdScreenAnim;
+      state.nextAnimation = burstCommentAnim;
       state.isActive = false;
     },
   })
@@ -283,36 +330,60 @@ const popNotificationsAnim = gsap
     color: "rgb(12, 3, 26)",
   });
 
-const moveToThirdScreenAnim = gsap.to(window, {
-  duration: 1.5,
-  scrollTo: "#list-3",
-  paused: true,
-  onComplete: () => moveChatsUpAnim.play(0),
-});
-
-/*
- Third page animation
-*/
-
-const moveChatsUpAnim = gsap
+const burstCommentAnim = gsap
   .timeline({
     paused: true,
     onReverseComplete: () => {
-      moveBackToSecondScreenAnim.play(0);
-    },
-    onComplete: () => {
-      state.playedAnimation = moveChatsUpAnim;
-      state.nextAnimation = moveToFourthScreenAnim;
+      state.playedAnimation = popNotificationsAnim;
+      state.nextAnimation = burstCommentAnim;
       state.isActive = false;
 
+      gsap.set(".comment-item.active", { position: "relative" });
+    },
+    onComplete: () => {
       gsap.set(
         [".fatching-loader._1", ".fatching-loader._2", ".fatching-complete"],
         {
           opacity: 0,
         }
       );
+
+      state.playedAnimation = burstCommentAnim;
+      state.nextAnimation = moveToFourthScreenAnim;
+      state.isActive = false;
     },
   })
+  .fromTo(
+    [".comment-item.active img", ".comment-item.active .comment-content"],
+    { opacity: 1 },
+    {
+      opacity: 0,
+      duration: 1,
+    }
+  )
+  .fromTo(
+    ".comment-item.active",
+    { scale: 1.15 },
+    {
+      scale: 9,
+      duration: 2,
+      onComplete: () => {
+        gsap.set(".comment-item.active", { position: "fixed" });
+      },
+    },
+    "<"
+  )
+  .fromTo(
+    "#list-2",
+    { opacity: 1 },
+    {
+      opacity: 0,
+      pointerEvents: "none",
+      onReverseComplete: () => {
+        gsap.set(".comment-item.active", { position: "relative" });
+      },
+    }
+  )
   .fromTo(
     ".urgent-report-container",
     { y: 0 },
@@ -320,6 +391,9 @@ const moveChatsUpAnim = gsap
       y: -500,
       delay: 1,
       duration: 1,
+      onReverseComplete: () => {
+        burstCommentAnim.reverse(1);
+      },
     }
   )
   .fromTo(
@@ -331,20 +405,14 @@ const moveChatsUpAnim = gsap
   )
   .fromTo(".gmail-highlighted-message", { opacity: 0 }, { opacity: 1 }, "<");
 
-const moveBackToSecondScreenAnim = gsap.to(window, {
-  duration: 1.5,
-  scrollTo: "#list-2",
-  paused: true,
-  onComplete: () => {
-    state.playedAnimation = popNotificationsAnim;
-    state.nextAnimation = moveToThirdScreenAnim;
-    state.isActive = false;
-  },
-});
+/*
+ Third page animation
+*/
 
-const moveToFourthScreenAnim = gsap.to(window, {
-  duration: 1.5,
-  scrollTo: "#list-4",
+const moveToFourthScreenAnim = gsap.to(".anims-container", {
+  opacity: 0,
+  pointerEvents: "none",
+  duration: 2,
   paused: true,
   onComplete: () => {
     showProcessTextsAnim.play(0);
@@ -355,12 +423,13 @@ const moveToFourthScreenAnim = gsap.to(window, {
  Fourth page animation
 */
 
-const moveBackToThirdScreenAnim = gsap.to(window, {
+const moveBackToThirdScreenAnim = gsap.to(".anims-container", {
+  opacity: 1,
+  pointerEvents: "auto",
   duration: 1.5,
-  scrollTo: "#list-3",
   paused: true,
   onComplete: () => {
-    state.playedAnimation = moveChatsUpAnim;
+    state.playedAnimation = burstCommentAnim;
     state.nextAnimation = moveToFourthScreenAnim;
     state.isActive = false;
   },
@@ -391,34 +460,10 @@ const showProcessTextsAnim = gsap
     {
       opacity: 1,
       duration: 2,
+      onStart: () => {
+        if (state.typed) state.typed.reset(true);
+      },
     }
-  )
-  .fromTo(".fatching-loader._1", { opacity: 1 }, { opacity: 0 })
-  .fromTo(
-    ".fatching-loader._2",
-    { opacity: 0 },
-    {
-      opacity: 1,
-      duration: 2,
-    },
-    "<"
-  )
-  .fromTo(
-    ".fatching-loader._2",
-    { opacity: 1 },
-    {
-      opacity: 0,
-      duration: 2,
-    }
-  )
-  .fromTo(
-    ".fatching-complete",
-    { opacity: 0 },
-    {
-      opacity: 1,
-      duration: 2,
-    },
-    "<"
   );
 
 const insightsAnim = gsap
@@ -478,7 +523,7 @@ const insightsAnim = gsap
     { opacity: 0, y: 100, scale: 0.8 },
     {
       opacity: 1,
-      y: -60,
+      y: -40,
       scale: 1,
       stagger: 0.4,
       ease: "elastic.out",
@@ -495,8 +540,10 @@ const showStriqueLoaderAnim = gsap
       state.isActive = false;
     },
     onComplete: () => {
-      state.playedAnimation = showStriqueLoaderAnim;
+      state.playedAnimation = null;
       state.nextAnimation = null;
+      document.querySelector(".page-loader").remove();
+      enableScroll();
       state.isActive = false;
     },
   })
@@ -514,4 +561,11 @@ const showStriqueLoaderAnim = gsap
       },
     }
   )
-  .fromTo(".final-logo-screen", { opacity: 0 }, { opacity: 1 });
+  .fromTo(".final-logo-screen", { opacity: 0 }, { opacity: 1 })
+  .fromTo(
+    ".final-logo-bg-wrapper",
+    { scale: 1, rotate: 0 },
+    { scale: 20, rotate: 360, duration: 1.5 },
+    ">+=2"
+  )
+  .fromTo(".page-loader", { opacity: 1 }, { opacity: 0, duration: 1 });
