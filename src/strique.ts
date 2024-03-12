@@ -117,7 +117,7 @@ const setupTypewriterEffect = () => {
       "Analysing multiple data",
       "It takes X hours to compile and generate a report<br />which could lead to human error",
     ],
-    typeSpeed: 50,
+    typeSpeed: 10,
   });
 };
 const skipAnimation = (ev: MouseEvent) => {
@@ -406,9 +406,15 @@ const burstCommentAnim = gsap
     { opacity: 1 },
     {
       opacity: 0,
+      duration: 1.5,
     }
   )
-  .fromTo(".gmail-highlighted-message", { opacity: 0 }, { opacity: 1 }, "<");
+  .fromTo(
+    ".gmail-highlighted-message",
+    { opacity: 0 },
+    { opacity: 1, duration: 1.5 },
+    "<"
+  );
 
 /*
  Third page animation
